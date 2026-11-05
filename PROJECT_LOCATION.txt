@@ -1,0 +1,19 @@
+OUR CIRCLE - PROJECT LOCATION FILE
+====================================
+
+ABSOLUTE PATH:
+C:\Users\siriv\.gemini\antigravity\scratch\our-circle
+
+HOW TO OPEN IN WINDOWS FILE EXPLORER:
+1. Press Windows Key + R
+2. Paste: C:\Users\siriv\.gemini\antigravity\scratch\our-circle
+3. Press Enter
+
+HOW TO OPEN IN VS CODE:
+Run in terminal:
+code "C:\Users\siriv\.gemini\antigravity\scratch\our-circle"
+
+COMMANDS:
+- Start App:      npm run dev  (Opens on http://localhost:5173/)
+- Run Tests:      npm test     (13/13 passing in < 350ms)
+- Production:     npm run build

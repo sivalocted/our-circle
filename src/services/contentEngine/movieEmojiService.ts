@@ -1,0 +1,167 @@
+import { getISTDateString, createSeededRNG } from './istTime';
+import type { MovieChallenge } from './types';
+export type { MovieChallenge };
+
+export const CURATED_MOVIES: MovieChallenge[] = [
+  {
+    id: 'mov_1',
+    title: 'Inception',
+    year: 2010,
+    emojis: '🌀 💤 ⏳ 🏙️',
+    genres: ['Sci-Fi', 'Thriller'],
+    director: 'Christopher Nolan',
+    clue: 'A thief who steals corporate secrets through dream-sharing technology is tasked with planting an idea into the mind of a CEO.',
+    hintStars: 'I _ C _ P T _ _ N',
+  },
+  {
+    id: 'mov_2',
+    title: 'Titanic',
+    year: 1997,
+    emojis: '🚢 🧊 🎻 💔',
+    genres: ['Romance', 'Drama'],
+    director: 'James Cameron',
+    clue: 'An aristocratic girl falls in love with an impoverished artist aboard an ill-fated, supposedly unsinkable ocean liner.',
+    hintStars: 'T _ T _ N _ C',
+  },
+  {
+    id: 'mov_3',
+    title: 'Interstellar',
+    year: 2014,
+    emojis: '🚀 🕳️ 🪐 ⌛',
+    genres: ['Sci-Fi', 'Adventure'],
+    director: 'Christopher Nolan',
+    clue: 'A team of explorers travels through a wormhole in space in an attempt to ensure humanity’s survival as Earth faces famine.',
+    hintStars: 'I N _ _ R S T _ L L _ R',
+  },
+  {
+    id: 'mov_4',
+    title: 'The Lion King',
+    year: 1994,
+    emojis: '🦁 👑 🌅 🐗',
+    genres: ['Animation', 'Adventure'],
+    director: 'Roger Allers & Rob Minkoff',
+    clue: 'A young lion prince flees his kingdom only to learn the true meaning of responsibility and bravery from unexpected jungle friends.',
+    hintStars: 'T H E   L _ O N   K _ N G',
+  },
+  {
+    id: 'mov_5',
+    title: 'The Matrix',
+    year: 1999,
+    emojis: '🕶️ 💊 🟩 💻',
+    genres: ['Sci-Fi', 'Action'],
+    director: 'Lana & Lilly Wachowski',
+    clue: 'A computer programmer discovers reality is an intricate simulation and joins a rebellion against intelligent machines.',
+    hintStars: 'T H E   M _ T R _ X',
+  },
+  {
+    id: 'mov_6',
+    title: 'Jurassic Park',
+    year: 1993,
+    emojis: '🦖 🧬 🚙 ⚡',
+    genres: ['Adventure', 'Sci-Fi'],
+    director: 'Steven Spielberg',
+    clue: 'A pragmatic paleontologist touring an almost complete theme park on an island is tasked with protecting kids after dinosaurs escape.',
+    hintStars: 'J U R _ S S _ C   P _ R K',
+  },
+  {
+    id: 'mov_7',
+    title: 'Up',
+    year: 2009,
+    emojis: '🎈 🏠 👴 🦤',
+    genres: ['Animation', 'Comedy'],
+    director: 'Pete Docter',
+    clue: 'An elderly widower ties thousands of balloons to his house to fly to Paradise Falls, accidentally bringing along an eager Boy Scout.',
+    hintStars: 'U P',
+  },
+  {
+    id: 'mov_8',
+    title: 'Finding Nemo',
+    year: 2003,
+    emojis: '🐠 🌊 🦈 🦷',
+    genres: ['Animation', 'Adventure'],
+    director: 'Andrew Stanton',
+    clue: 'A timid clownfish embarks on a journey across the open ocean to Sydney Harbour accompanied by a forgetful blue tang.',
+    hintStars: 'F _ N D _ N G   N _ M O',
+  },
+  {
+    id: 'mov_9',
+    title: 'The Dark Knight',
+    year: 2008,
+    emojis: '🦇 🃏 🏙️ 🪙',
+    genres: ['Action', 'Crime'],
+    director: 'Christopher Nolan',
+    clue: 'When a menace known as the Joker wreaks havoc and chaos on Gotham, the caped vigilante must accept one of his greatest psychological tests.',
+    hintStars: 'T H E   D _ R K   K N _ G H T',
+  },
+  {
+    id: 'mov_10',
+    title: 'Ratatouille',
+    year: 2007,
+    emojis: '🐀 👨‍🍳 🍲 🥖',
+    genres: ['Animation', 'Comedy'],
+    director: 'Brad Bird',
+    clue: 'A rat who can cook makes an unusual alliance with a young kitchen worker at a renowned restaurant in Paris.',
+    hintStars: 'R A T _ T O U _ L L E',
+  },
+  {
+    id: 'mov_11',
+    title: 'Coco',
+    year: 2017,
+    emojis: '🎸 💀 🌼 🕯️',
+    genres: ['Animation', 'Fantasy'],
+    director: 'Lee Unkrich',
+    clue: 'Aspiring musician Miguel enters the vibrant Land of the Dead to unlock the real story behind his family’s ban on music.',
+    hintStars: 'C O C O',
+  },
+  {
+    id: 'mov_12',
+    title: '3 Idiots',
+    year: 2009,
+    emojis: '🎓 🏫 🛵 👨‍🎓',
+    genres: ['Comedy', 'Drama'],
+    director: 'Rajkumar Hirani',
+    clue: 'Two friends search for their long-lost companion while revisiting their college days at an elite engineering institute.',
+    hintStars: '3   I D _ O T S',
+  },
+  {
+    id: 'mov_13',
+    title: 'Forrest Gump',
+    year: 1994,
+    emojis: '🍫 🏃 🪶 🍤',
+    genres: ['Drama', 'Romance'],
+    director: 'Robert Zemeckis',
+    clue: 'The history of the United States unfolds from the perspective of an Alabama man with an IQ of 75 who yearns to be reunited with his childhood sweetheart.',
+    hintStars: 'F O R R _ S T   G U M P',
+  },
+  {
+    id: 'mov_14',
+    title: 'RRR',
+    year: 2022,
+    emojis: '🔥 🌊 🐅 🚂',
+    genres: ['Action', 'Drama'],
+    director: 'S. S. Rajamouli',
+    clue: 'A fearless warrior on a perilous mission comes face to face with a steely cop in British-occupied India before an unbreakable brotherhood is forged.',
+    hintStars: 'R R R',
+  },
+  {
+    id: 'mov_15',
+    title: 'Avatar',
+    year: 2009,
+    emojis: '🌲 🏹 🐉 🔵',
+    genres: ['Sci-Fi', 'Action'],
+    director: 'James Cameron',
+    clue: 'A paraplegic Marine dispatched to the moon Pandora on a unique mission becomes torn between following his orders and protecting an alien civilization.',
+    hintStars: 'A V A T A R',
+  },
+];
+
+export function getDailyMovie(dateKey: string = getISTDateString()): MovieChallenge {
+  const rng = createSeededRNG(`movie-ist-${dateKey}`);
+  const index = Math.floor(rng() * CURATED_MOVIES.length);
+  return CURATED_MOVIES[index];
+}
+
+export function getRandomPracticeMovie(): MovieChallenge {
+  const index = Math.floor(Math.random() * CURATED_MOVIES.length);
+  return CURATED_MOVIES[index];
+}
