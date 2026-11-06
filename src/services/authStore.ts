@@ -39,10 +39,10 @@ export function profileFromAuthUser(user: User): UserProfile {
     userId: user.id,
     email: user.email ?? '',
     name: displayName,
-    birthday: typeof publicMetadata.birthday === 'string' ? publicMetadata.birthday : undefined,
+    birthday: undefined,
     avatarUrl: avatar || createInitialAvatar(displayName),
     role,
-    isOnboarded: publicMetadata.onboarding_complete === true,
+    isOnboarded: false,
     joinedAt: user.created_at ? Date.parse(user.created_at) : Date.now(),
     upiHandle: typeof publicMetadata.upi_handle === 'string' ? publicMetadata.upi_handle : undefined,
   };
@@ -89,31 +89,57 @@ class AuthStore {
       return;
     }
 
-    void Promise.resolve(supabase.from('family_members')
-      .select('role')
-      .eq('email', (user.email ?? '').toLowerCase())
-      .eq('is_active', true)
-      .maybeSingle())
-      .then(({ data, error }) => {
+    void (async () => {
+      try {
+        const lookup = () => supabase!.from('family_members').select('role')
+          .eq('email', (user.email ?? '').toLowerCase()).eq('is_active', true).maybeSingle();
+        let result = await lookup();
         if (version !== this.sessionVersion) return;
-        if (error) {
+        if (result.error) {
           this.setAccessState('unavailable');
           return;
         }
-        if (!data) {
+        if (!result.data) {
+          // The RPC checks auth.users email confirmation, invitation expiry and
+          // normalized address before adding membership. OAuth alone grants nothing.
+          await supabase!.rpc('accept_family_invitation');
+          if (version !== this.sessionVersion) return;
+          result = await lookup();
+        }
+        if (result.error) {
+          this.setAccessState('unavailable');
+          return;
+        }
+        if (!result.data) {
           this.setAccessState('denied');
           return;
         }
-        this.currentUser = {
-          ...profileFromAuthUser(user),
-          role: data.role === 'admin' ? 'admin' : 'cousin',
-        };
+        const base = profileFromAuthUser(user);
+        let profile = base;
+        try {
+          const { data } = await supabase!.from('family_profiles')
+            .select('display_name,avatar_path').eq('user_id', user.id).maybeSingle();
+          const { data: privateData } = await supabase!.from('family_profile_private')
+            .select('birthday_month,birthday_day').eq('user_id', user.id).maybeSingle();
+          if (data) profile = {
+            ...base,
+            name: data.display_name,
+            birthday: privateData?.birthday_month && privateData.birthday_day
+              ? `${String(privateData.birthday_month).padStart(2, '0')}-${String(privateData.birthday_day).padStart(2, '0')}`
+              : undefined,
+            isOnboarded: true,
+          };
+        } catch {
+          // Profile reads are optional until the profile migration is installed.
+        }
+        if (version !== this.sessionVersion) return;
+        this.currentUser = { ...profile, role: result.data.role === 'admin' ? 'admin' : 'cousin' };
         this.setAccessState('authorized');
         this.notifyUser();
-      })
-      .catch(() => {
+      } catch {
         if (version === this.sessionVersion) this.setAccessState('unavailable');
-      });
+      }
+    })();
   }
 
   private notifyUser() {
@@ -152,9 +178,10 @@ class AuthStore {
     if (!supabase || !isSupabaseConfigured) {
       return { error: new Error('Authentication is not configured for this deployment.') };
     }
+    const redirectUrl = window.location.origin + window.location.pathname;
     return supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      options: { redirectTo: redirectUrl },
     });
   }
 
@@ -170,35 +197,37 @@ class AuthStore {
   }
 
   /** Local profile fields are user-owned metadata, never authorization claims. */
-  completeOnboarding(profileData: {
+  async completeOnboarding(profileData: {
     name: string;
-    birthday: string;
-    avatarUrl?: string;
-    upiHandle?: string;
-  }): UserProfile | null {
+    birthdayMonth: number;
+    birthdayDay: number;
+    birthdayYear?: number;
+    birthdayVisibility: 'private' | 'members';
+    birthdayYearVisible: boolean;
+    introduction?: string;
+    preferredTimezone: string;
+  }): Promise<UserProfile | null> {
     if (!supabase || !this.currentUser) return null;
 
     const updated: UserProfile = {
       ...this.currentUser,
       name: profileData.name.trim() || this.currentUser.name,
-      birthday: profileData.birthday,
-      avatarUrl: profileData.avatarUrl || createInitialAvatar(profileData.name),
-      upiHandle: profileData.upiHandle?.trim(),
+      birthday: `${String(profileData.birthdayMonth).padStart(2, '0')}-${String(profileData.birthdayDay).padStart(2, '0')}`,
       isOnboarded: true,
     };
+    const { error } = await supabase.rpc('complete_family_profile', {
+      p_display_name: updated.name,
+      p_birthday_month: profileData.birthdayMonth,
+      p_birthday_day: profileData.birthdayDay,
+      p_birthday_year: profileData.birthdayYear ?? null,
+      p_birthday_visibility: profileData.birthdayVisibility,
+      p_birthday_year_visible: profileData.birthdayYearVisible,
+      p_introduction: profileData.introduction?.trim() || null,
+      p_preferred_timezone: profileData.preferredTimezone || 'Asia/Kolkata',
+    });
+    if (error) throw error;
     this.currentUser = updated;
     this.listeners.forEach((listener) => listener(updated));
-    void supabase.auth.updateUser({
-      data: {
-        full_name: updated.name,
-        birthday: updated.birthday,
-        avatar_url: updated.avatarUrl,
-        upi_handle: updated.upiHandle,
-        onboarding_complete: true,
-      },
-    }).then(({ error }) => {
-      if (error) console.error('Could not save profile details.', error);
-    });
     return updated;
   }
 
